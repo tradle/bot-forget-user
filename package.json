@@ -1,0 +1,26 @@
+{
+  "name": "@tradle/bot-forget-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tradle/bot-forget-user"
+  },
+  "keywords": [
+    "tradle",
+    "chatbot",
+    "bot"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.4.7"
+  },
+  "devDependencies": {
+    "eslint": "^3.15.0",
+    "tape": "^4.6.3"
+  },
+  "scripts": {
+    "lint": "eslint --quiet .",
+    "test": "node test"
+  }
+}
