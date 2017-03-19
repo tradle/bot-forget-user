@@ -6,7 +6,7 @@ const FORGET_ME = 'tradle.ForgetMe'
 const FORGOT_YOU = 'tradle.ForgotYou'
 
 test('forget', co(function* (t) {
-  const ted = { id: 'ted' }
+  const ted = { id: 'ted', history: [{}] }
   const myUsers = { [ted.id]: ted }
   const users = {
     del: id => {
@@ -50,7 +50,7 @@ test('forget', co(function* (t) {
     object: { [TYPE]: 'tradle.ForgetMe' }
   })
 
-  t.notOk(users.get(ted.id))
+  t.same(users.get(ted.id), { id: 'ted', history: [] })
   t.same(sent, [{ [TYPE]: FORGOT_YOU }])
   t.equal(preforgetCounter, 1)
   t.equal(postforgetCounter, 1)

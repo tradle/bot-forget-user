@@ -22,14 +22,25 @@ module.exports = function createForgetter (bot, opts={}) {
       }
     }
 
+    const { id } = user
     yield bot.send({
-      userId: user,
+      userId: id,
       object: {
         [TYPE]: FORGOT_YOU
       }
     })
 
-    bot.users.del(user.id)
+    // clear default props, let other strategies clean their own storage in preforget/postforgot
+    if (Array.isArray(user.history)) {
+      user.history.length = 0
+    }
+
+    ;['profile', 'identity'].forEach(prop => {
+      if (user[prop] && typeof user[prop] === 'object') {
+        delete user[prop]
+      }
+    })
+
     if (postforget) {
       const result = postforget(data)
       if (isPromise(result)) yield result
