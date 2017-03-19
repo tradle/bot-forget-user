@@ -41,6 +41,10 @@ module.exports = function createForgetter (bot, opts={}) {
       }
     })
 
+    ;['objects', 'messages'].forEach(prop => {
+      if (user[prop]) user[prop] = {}
+    })
+
     if (postforget) {
       const result = postforget(data)
       if (isPromise(result)) yield result
