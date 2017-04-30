@@ -1,33 +1,21 @@
 const co = require('bluebird').coroutine
 const test = require('tape')
 const installForgetter = require('./')
+const createBot = require('@tradle/bots').bot
+const { fakeWrapper } = require('@tradle/bots/test/utils')
 const TYPE = '_t'
 const FORGET_ME = 'tradle.ForgetMe'
 const FORGOT_YOU = 'tradle.ForgotYou'
 
 test('forget', co(function* (t) {
-  const ted = { id: 'ted', history: [{}] }
-  const myUsers = { [ted.id]: ted }
-  const users = {
-    del: id => {
-      delete myUsers[id]
-    },
-    get: id => myUsers[id],
-    list: () => myUsers
-  }
-
-  let receive
-  let sent = []
-  const bot = {
+  const userId = 'ted'
+  const providerId = 'provider'
+  const bot = createBot({
+    inMemory: true,
     send: co(function* ({ user, object }) {
-      sent.push(object)
-    }),
-    receive: data => receive(data),
-    users,
-    addReceiveHandler: handler => {
-      receive = handler
-    }
-  }
+      return fakeWrapper({ from: providerId, to: userId, object })
+    })
+  })
 
   const preforget = () => preforgetCounter++
   const postforget = () => postforgetCounter++
@@ -36,23 +24,37 @@ test('forget', co(function* (t) {
   let postforgetCounter = 0
   installForgetter(bot, { preforget, postforget })
 
-  yield bot.receive({
-    user: ted,
+  bot.receive(fakeWrapper({
+    from: userId,
+    to: providerId,
     object: { [TYPE]: 'blah' }
-  })
+  }))
 
-  t.same(users.get(ted.id), ted)
-  t.equal(sent.length, 0)
+  yield receive()
+
+  let history = yield bot.users.history.dump(userId)
+  t.equal(history[0].message.object[TYPE], 'blah')
   t.equal(preforgetCounter, 0)
   t.equal(postforgetCounter, 0)
-  yield bot.receive({
-    user: ted,
-    object: { [TYPE]: 'tradle.ForgetMe' }
-  })
+  bot.receive(fakeWrapper({
+    from: userId,
+    to: providerId,
+    object: { [TYPE]: FORGET_ME }
+  }))
 
-  t.same(users.get(ted.id), { id: 'ted', history: [] })
-  t.same(sent, [{ [TYPE]: FORGOT_YOU }])
+  yield send()
+
+  history = yield bot.users.history.dump(userId)
+  t.same(history.map(item => item.message.object[TYPE]), [FORGET_ME, FORGOT_YOU])
   t.equal(preforgetCounter, 1)
   t.equal(postforgetCounter, 1)
   t.end()
+
+  function receive () {
+    return new Promise(resolve => bot.once('message', resolve))
+  }
+
+  function send () {
+    return new Promise(resolve => bot.once('sent', resolve))
+  }
 }))
